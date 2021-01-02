@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <head>
-    <title>RealistikPanel! - {{ title }}</title>
+    <title>KawataAP! - {{ title }}</title>
     <!--Icon kit things-->
     <script src="https://kit.fontawesome.com/e9bdb24827.js" crossorigin="anonymous"></script>
     {% block head %}{% endblock %}
@@ -54,7 +54,7 @@
                         <div class="d-sm-none d-lg-inline-block">Hi, {{ session["AccountName"] }}!</div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-right">
-                        <div class="dropdown-title">RealistikPanel!</div>
+                        <div class="dropdown-title">KawataAP!</div>
                         <a href="{{ config['ServerURL'] }}u/{{ session['AccountId'] }}" class="dropdown-item has-icon">
                             <i class="far fa-user"></i> Profile
                         </a>
@@ -69,7 +69,7 @@
         <div class="main-sidebar sidebar-style-2" tabindex="1" style="overflow: hidden; outline: none;">
             <aside id="sidebar-wrapper">
                 <div class="sidebar-brand">
-                    <a href="/">RealistikPanel!</a>
+                    <a href="/">KawataAP!</a>
                 </div>
                 <ul class="sidebar-menu" id="sidebar">
                     <li class="menu-header">Information</li>
@@ -86,7 +86,7 @@
                     <a href="/badges" class="nav-link ManageSettings"><i class="fas fa-certificate"></i><span> Badges</span></a>
                     <a href="/privileges" class="nav-link ManagePrivileges"><i class="fas fa-check-circle"></i><span> Privileges</span></a>
                     <a href="/clans/1" class="nav-link ManageClans"><i class="fas fa-user-friends"></i><span> Manage Clans</span></a>
-                    <li class="menu-header">RealistikPanel</li>
+                    <li class="menu-header">KawataAP</li>
                     <a href="/changelogs" class="nav-link AccessRAP"><i class="fas fa-exchange-alt"></i><span> Changelogs</span></a>
                     <a href="/admins" class="nav-link AccessRAP"><i class="fas fa-user-cog"></i><span> Admins</span></a>
                     <a href="/toggledark" class="nav-link"><i class="fas fa-lightbulb"></i><span>
@@ -173,7 +173,7 @@ PendingVerification = 2 << 19
 TournamentStaff  = 2 << 20
 Caker = 2 << 21
 ViewTopScores = 2 << 22
-//RealistikPanel Specific Perms
+//KawataAP Specific Perms
 RPNominate = 2 << 23
 RPNominateAccept = 2 << 24
 RPOverwatch = 2 << 25

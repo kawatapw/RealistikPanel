@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h2 class="section-title">Changelogs</h2>
-<p class="section-lead">View the newest changes made to RealistikPanel!</p>
+<p class="section-lead">View the newest changes made to KawataAP!</p>
 {% for log in logs %}
 {% if log["Type"] == 1 %}
 <div class="card card-primary">
@@ -12,7 +12,7 @@
 {% endif %}
     <div class="card-header">
         <h4>
-            RealistikPanel Build {{ log["Build"] }} 
+            KawataAP Build {{ log["Build"] }} 
             {% if log["Type"] == 1 %}
             (Major Release)
             {% elif log["Type"] == 2 %}
@@ -50,7 +50,7 @@
         {% endfor %}
     </div>
     <div class="card-footer">
-        RealistikPanel!
+        KawataAP!
     </div>
 </div>
 {% endfor %}
