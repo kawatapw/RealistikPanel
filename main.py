@@ -471,7 +471,7 @@ def WipeVARoute(AccountID: int):
     """The wipe action."""
     if HasPrivilege(session["AccountId"], 11):
         Account = GetUser(AccountID)
-        WipeVanilla(AccountID)
+        Wipe(AccountID)
         RAPLog(session["AccountId"], f"has wiped the vanilla statistics for the account {Account['Username']} ({AccountID})")
         return redirect(f"/user/edit/{AccountID}")
     else:

@@ -239,11 +239,11 @@ def RecentPlays(TotalPlays = 20, MinPP = 0):
     if UserConfig["HasAutopilot"]:
         DivBy += 1
     PerGamemode = round(TotalPlays/DivBy)
-    mycursor.execute("SELECT scores.beatmap_md5, users.username, scores.userid, scores.time, scores.score, scores.pp, scores.play_mode, scores.mods, scores.300_count, scores.100_count, scores.50_count, scores.misses_count FROM scores LEFT JOIN users ON users.id = scores.userid WHERE users.privileges & 1 AND scores.pp >= %s ORDER BY scores.time DESC LIMIT %s", (MinPP, PerGamemode,))
+    mycursor.execute("SELECT scores.beatmap_md5, users.username, scores.userid, scores.time, scores.score, scores.pp, scores.play_mode, scores.mods, scores.300_count, scores.100_count, scores.50_count, scores.misses_count FROM scores LEFT JOIN users ON users.id = scores.userid WHERE users.privileges & 1 AND scores.pp >= %s AND is_relax = 0 ORDER BY scores.time DESC LIMIT %s", (MinPP, PerGamemode,))
     plays = mycursor.fetchall()
     if UserConfig["HasRelax"]:
         #adding relax plays
-        mycursor.execute("SELECT scores_relax.beatmap_md5, users.username, scores_relax.userid, scores_relax.time, scores_relax.score, scores_relax.pp, scores_relax.play_mode, scores_relax.mods, scores_relax.300_count, scores_relax.100_count, scores_relax.50_count, scores_relax.misses_count FROM scores_relax LEFT JOIN users ON users.id = scores_relax.userid WHERE users.privileges & 1 AND scores_relax.pp >= %s ORDER BY scores_relax.time DESC LIMIT %s", (MinPP, PerGamemode,))
+        mycursor.execute("SELECT scores_relax.beatmap_md5, users.username, scores_relax.userid, scores_relax.time, scores_relax.score, scores_relax.pp, scores_relax.play_mode, scores_relax.mods, scores_relax.300_count, scores_relax.100_count, scores_relax.50_count, scores_relax.misses_count FROM scores_relax LEFT JOIN users ON users.id = scores_relax.userid WHERE is_relax = 1 users.privileges & 1 AND scores_relax.pp >= %s ORDER BY scores_relax.time DESC LIMIT %s", (MinPP, PerGamemode,))
         playx_rx = mycursor.fetchall()
         for plays_rx in playx_rx:
             #addint them to the list
@@ -1018,20 +1018,17 @@ def WipeAccount(AccId):
         "userID" : AccId,
         "reason" : "Your account has been wiped! F"
     }))
+
+    Wipe(AccId)
     if UserConfig["HasRelax"]:
-        mycursor.execute("DELETE FROM scores_relax WHERE userid = %s", (AccId,))
-    if UserConfig["HasAutopilot"]:
-        mycursor.execute("DELETE FROM scores_ap WHERE userid = %s", (AccId,))
-    WipeVanilla(AccId)
-    if UserConfig["HasRelax"]:
-        WipeRelax(AccId)
+        Wipe(AccId, True)
     if UserConfig["HasAutopilot"]:
         WipeAutopilot(AccId)
 
-def WipeVanilla(AccId):
+def Wipe(AccId: int, relax: bool = False):
     """Wiped vanilla scores for user."""
-    mycursor.execute("""UPDATE
-            users_stats
+    mycursor.execute(f"""UPDATE
+            {'users_stats' if not relax else 'rx_stats'}
         SET
             ranked_score_std = 0,
             playcount_std = 0,
@@ -1072,57 +1069,44 @@ def WipeVanilla(AccId):
         WHERE
             id = %s
     """, (AccId,))
-    mycursor.execute("DELETE FROM scores WHERE userid = %s", (AccId,))
-    mycursor.execute("DELETE FROM users_beatmap_playcount WHERE user_id = %s", (AccId,))
-    mydb.commit()
 
-def WipeRelax(AccId):
-    """Wipes the relax user data."""
-    mycursor.execute("""UPDATE
-            rx_stats
-        SET
-            ranked_score_std = 0,
-            playcount_std = 0,
-            total_score_std = 0,
-            replays_watched_std = 0,
-            ranked_score_taiko = 0,
-            playcount_taiko = 0,
-            total_score_taiko = 0,
-            replays_watched_taiko = 0,
-            ranked_score_ctb = 0,
-            playcount_ctb = 0,
-            total_score_ctb = 0,
-            replays_watched_ctb = 0,
-            ranked_score_mania = 0,
-            playcount_mania = 0,
-            total_score_mania = 0,
-            replays_watched_mania = 0,
-            total_hits_std = 0,
-            total_hits_taiko = 0,
-            total_hits_ctb = 0,
-            total_hits_mania = 0,
-            level_std = 0,
-            level_taiko = 0,
-            level_ctb = 0,
-            level_mania = 0,
-            playtime_std = 0,
-            playtime_taiko = 0,
-            playtime_ctb = 0,
-            playtime_mania = 0,
-            avg_accuracy_std = 0.000000000000,
-            avg_accuracy_taiko = 0.000000000000,
-            avg_accuracy_ctb = 0.000000000000,
-            avg_accuracy_mania = 0.000000000000,
-            pp_std = 0,
-            pp_taiko = 0,
-            pp_ctb = 0,
-            pp_mania = 0
+    # We backup scores in case ig.
+    # This may be bad for memory usage but eh we discard it immidiately.
+    mycursor.execute(
+        """
+        SELECT
+            id, beatmap_md5, userid, score, is_relax,
+            max_combo, full_combo, mods, 300_count,
+            100_count, 50_count, katus_count,
+            gekis_count, misses_count, time, play_mode,
+            completed, accuracy, pp, playtime
+        FROM scores
         WHERE
-            id = %s
-    """, (AccId,))
-    mycursor.execute("DELETE FROM scores_relax WHERE userid = %s", (AccId,))
-    mycursor.execute("DELETE FROM rx_beatmap_playcount WHERE user_id = %s", (AccId,))
+            userid = %s AND
+            is_relax = %s
+        """, (AccId, int(relax))
+    )
+
+    # Now we iterate through all their scores and individually add
+    # them into the database.
+    for score in mycursor.fetchall():
+        mycursor.execute("""
+        INSERT INTO scores_removed
+        (
+            id, beatmap_md5, userid, score, is_relax,
+            max_combo, full_combo, mods, 300_count,
+            100_count, 50_count, katus_count,
+            gekis_count, misses_count, time, play_mode,
+            completed, accuracy, pp, playtime
+        )
+        VALUES
+            (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """, score)
+
+    mycursor.execute("DELETE FROM scores WHERE userid = %s AND is_relax = %s", (AccId, int(relax)))
+    mycursor.execute(f"DELETE FROM users_beatmap_playcount WHERE user_id = %s", (AccId,)) # Is there a rx equivalent?
     mydb.commit()
+    
 
 def WipeAutopilot(AccId):
     """Wipes the autopilot user data."""
@@ -1279,7 +1263,7 @@ def DeleteAccount(id : int):
     mycursor.execute("DELETE FROM user_clans WHERE user = %s", (id,))
     mycursor.execute("DELETE FROM users_stats WHERE id = %s", (id,))
     if UserConfig["HasRelax"]:
-        mycursor.execute("DELETE FROM scores_relax WHERE userid = %s", (id,))
+        #mycursor.execute("DELETE FROM _rx WHERE userid = %s", (id,)) # Kawata uses 1 table for this
         mycursor.execute("DELETE FROM rx_stats WHERE id = %s", (id,))
     if UserConfig["HasAutopilot"]:
         mycursor.execute("DELETE FROM scores_ap WHERE userid = %s", (id,))
