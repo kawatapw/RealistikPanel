@@ -938,7 +938,7 @@ def ApplyUserEdit(form, session):
     mycursor.execute("UPDATE users SET email = %s, notes = %s, username = %s, username_safe = %s, privileges=%s WHERE id = %s", (Email, Notes, Username, SafeUsername,Privilege, UserId,))
     mycursor.execute("UPDATE users_stats SET country = %s, userpage_content = %s, username_aka = %s, username = %s WHERE id = %s", (Country, UserPage, Aka, Username, UserId,))
     if UserConfig["HasRelax"]:
-        mycursor.execute("UPDATE rx_stats SET country = %s, username_aka = %s, username = %s WHERE id = %s", (Country, Aka, Username, UserId,))
+        mycursor.execute("UPDATE users_stats_relax  SET country = %s, username_aka = %s, username = %s WHERE id = %s", (Country, Aka, Username, UserId,))
     if UserConfig["HasAutopilot"]:
         mycursor.execute("UPDATE ap_stats SET country = %s, username_aka = %s, username = %s WHERE id = %s", (Country, Aka, Username, UserId,))
     mydb.commit()
@@ -1028,7 +1028,7 @@ def WipeAccount(AccId):
 def Wipe(AccId: int, relax: bool = False):
     """Wiped vanilla scores for user."""
     mycursor.execute(f"""UPDATE
-            {'users_stats' if not relax else 'rx_stats'}
+            {'users_stats' if not relax else 'users_stats_relax '}
         SET
             ranked_score_std = 0,
             playcount_std = 0,
@@ -1264,7 +1264,7 @@ def DeleteAccount(id : int):
     mycursor.execute("DELETE FROM users_stats WHERE id = %s", (id,))
     if UserConfig["HasRelax"]:
         #mycursor.execute("DELETE FROM _rx WHERE userid = %s", (id,)) # Kawata uses 1 table for this
-        mycursor.execute("DELETE FROM rx_stats WHERE id = %s", (id,))
+        mycursor.execute("DELETE FROM users_stats_relax  WHERE id = %s", (id,))
     if UserConfig["HasAutopilot"]:
         mycursor.execute("DELETE FROM scores_ap WHERE userid = %s", (id,))
         mycursor.execute("DELETE FROM ap_stats WHERE id = %s", (id,))
