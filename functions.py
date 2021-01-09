@@ -232,39 +232,12 @@ def TimestampConverter(timestamp, NoDate=1):
 
 def RecentPlays(TotalPlays = 20, MinPP = 0):
     """Returns recent plays."""
-    #this is probably really bad
-    DivBy = 1
-    if UserConfig["HasRelax"]:
-        DivBy += 1
-    if UserConfig["HasAutopilot"]:
-        DivBy += 1
-    PerGamemode = round(TotalPlays/DivBy)
-    mycursor.execute("SELECT scores.beatmap_md5, users.username, scores.userid, scores.time, scores.score, scores.pp, scores.play_mode, scores.mods, scores.300_count, scores.100_count, scores.50_count, scores.misses_count FROM scores LEFT JOIN users ON users.id = scores.userid WHERE users.privileges & 1 AND scores.pp >= %s AND scores.is_relax = 0 ORDER BY scores.time DESC LIMIT %s", (MinPP, PerGamemode,))
+    mycursor.execute("SELECT scores.beatmap_md5, users.username, scores.userid, scores.time, scores.score, scores.pp, scores.play_mode, scores.mods, scores.300_count, scores.100_count, scores.50_count, scores.misses_count FROM scores LEFT JOIN users ON users.id = scores.userid WHERE users.privileges & 1 AND scores.pp >= %s AND scores.is_relax = 0 ORDER BY scores.time DESC LIMIT %s", (MinPP, TotalPlays,))
     plays = mycursor.fetchall()
-    if UserConfig["HasRelax"]:
-        #adding relax plays
-        mycursor.execute("SELECT scores_relax.beatmap_md5, users.username, scores_relax.userid, scores_relax.time, scores_relax.score, scores_relax.pp, scores_relax.play_mode, scores_relax.mods, scores_relax.300_count, scores_relax.100_count, scores_relax.50_count, scores_relax.misses_count FROM scores_relax LEFT JOIN users ON users.id = scores_relax.userid WHERE scores. = 1 users.privileges & 1 AND scores_relax.pp >= %s ORDER BY scores_relax.time DESC LIMIT %s", (MinPP, PerGamemode,))
-        playx_rx = mycursor.fetchall()
-        for plays_rx in playx_rx:
-            #addint them to the list
-            plays_rx = list(plays_rx)
-            plays.append(plays_rx)
-    if UserConfig["HasAutopilot"]:
-        #adding relax plays
-        mycursor.execute("SELECT scores_ap.beatmap_md5, users.username, scores_ap.userid, scores_ap.time, scores_ap.score, scores_ap.pp, scores_ap.play_mode, scores_ap.mods, scores_ap.300_count, scores_ap.100_count, scores_ap.50_count, scores_ap.misses_count FROM scores_ap LEFT JOIN users ON users.id = scores_ap.userid WHERE users.privileges & 1 AND scores_ap.pp >= %s ORDER BY scores_ap.time DESC LIMIT %s", (MinPP, PerGamemode,))
-        playx_ap = mycursor.fetchall()
-        for plays_ap in playx_ap:
-            #addint them to the list
-            plays_ap = list(plays_ap)
-            plays.append(plays_ap)
-    PlaysArray = []
-    #converting into lists as theyre cooler (and easier to work with)
-    for x in plays:
-        PlaysArray.append(list(x))
 
     #converting the data into something readable
     ReadableArray = []
-    for x in PlaysArray:
+    for x in plays:
         #yes im doing this
         #lets get the song name
         BeatmapMD5 = x[0]
@@ -639,10 +612,13 @@ def ApplySystemSettings(DataArray, Session):
 
 def IsOnline(AccountId: int):
     """Checks if given user is online."""
-    Online = requests.get(url=f"{UserConfig['BanchoURL']}api/v1/isOnline?id={AccountId}").json()
-    if Online["status"] == 200:
-        return Online["result"]
-    else:
+    try:
+        Online = requests.get(url=f"{UserConfig['BanchoURL']}api/v1/isOnline?id={AccountId}").json()
+        if Online["status"] == 200:
+            return Online["result"]
+        else:
+            return False
+    except Exception:
         return False
 
 def CalcPP(BmapID):
